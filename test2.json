@@ -1,0 +1,27 @@
+[
+    {
+        "input": "Find en cafe i nærheden.",
+        "expected_output": "{ \"version\": 1, \"include\": { \"or\": {}, \"and\": { \"lt\": [2] } }, \"exclude\": { \"or\": {}, \"and\": {} } }",
+        "description": "Simpel kategori, ignorer afstand"
+    },
+    {
+        "input": "Hvor er det nærmeste galleri?",
+        "expected_output": "{ \"version\": 1, \"include\": { \"or\": {}, \"and\": { \"lt\": [3] } }, \"exclude\": { \"or\": {}, \"and\": {} } }",
+        "description": "Simpel kategori, ignorer 'nærmeste'"
+    },
+    {
+        "input": "En god restaurant med udsigt.",
+        "expected_output": "{ \"version\": 1, \"include\": { \"or\": {}, \"and\": { \"lt\": [1], \"st\": [201, 211] } }, \"exclude\": { \"or\": {}, \"and\": {} } }",
+        "description": "Kategori + flere st egenskaber i 'and' array"
+    },
+    {
+        "input": "Pizzeria der ikke er fastfood.",
+        "expected_output": "{ \"version\": 1, \"include\": { \"or\": {}, \"and\": { \"lt\": [1], \"st\": [101] } }, \"exclude\": { \"or\": {}, \"and\": { \"st\": [105] } } }",
+        "description": "Implicit kategori + st nøgleord + negation af st"
+    },
+    {
+        "input": "Er der nogle nye in steder (cafeer)?",
+        "expected_output": "{ \"version\": 1, \"include\": { \"or\": {}, \"and\": { \"lt\": [2], \"st\": [202] } }, \"exclude\": { \"or\": {}, \"and\": {} } }",
+        "description": "Kategori + special mapping (Trendy st)"
+    }
+  ]

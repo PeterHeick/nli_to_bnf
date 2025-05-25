@@ -1,0 +1,47 @@
+[
+    {
+        "input": "Find en cafe i nærheden.",
+        "expected_output": "Cafe",
+        "description": "Simpel kategori, ignorer afstand"
+    },
+    {
+        "input": "Hvor er det nærmeste galleri?",
+        "expected_output": "Galleri",
+        "description": "Simpel kategori, ignorer 'nærmeste'"
+    },
+    {
+        "input": "En god restaurant med udsigt.",
+        "expected_output": "Restaurant AND \"God\" AND \"Med udsigt\"",
+        "description": "Kategori + flere quotede egenskaber"
+    },
+    {
+        "input": "Pizzeria der ikke er fastfood.",
+        "expected_output": "Restaurant AND Pizza AND NOT \"Fastfood\"",
+        "description": "Implicit kategori + nøgleord + negation af quoted phrase"
+    },
+    {
+        "input": "Er der nogle nye in steder (cafeer)?",
+        "expected_output": "Cafe AND \"Trendy\"",
+        "description": "Kategori + special mapping"
+    },
+    {
+        "input": "Billige butikker med tøj.",
+        "expected_output": "Butik AND \"Billig\" AND Tøj",
+        "description": "Kategori + quoted property + nøgleord"
+    },
+    {
+        "input": "Find en hyggelig havn",
+        "expected_output": "Havn AND \"Hyggelig\"",
+        "description": "Kategori + quoted egenskab"
+    },
+    {
+        "input": "Findes der en svømmehal i nærheden",
+        "expected_output": "Svømmehal",
+        "description": "Kategori, ignorer afstand"
+    },
+    {
+        "input": "Hvad er klokken?",
+        "expected_output": "UNKNOWN",
+        "description": "Irrelevant forespørgsel"
+    }
+]
