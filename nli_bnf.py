@@ -7,7 +7,7 @@ import sys
 
 # --- Konfiguration ---
 load_dotenv()
-API_KEY = os.getenv('GOOGLE_API_KEY')
+API_KEY = os.getenv('GEMINI_API_KEY')
 MODEL_NAME = 'gemini-1.5-flash-latest' # Sørg for dette navn er korrekt
 TEST_CASES_FILE = 'test2.json' # Fil med testcases i JSON format
 
