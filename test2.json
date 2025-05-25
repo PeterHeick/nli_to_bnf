@@ -1,27 +1,77 @@
 [
     {
-        "input": "Find en cafe i nærheden.",
-        "expected_output": "{ \"version\": 1, \"include\": { \"or\": {}, \"and\": { \"lt\": [2] } }, \"exclude\": { \"or\": {}, \"and\": {} } }",
-        "description": "Simpel kategori, ignorer afstand"
+        "input": "Billige butikker med tøj.",
+        "expected_output": "Butik AND \"Billig\" AND Tøj",
+        "description": "Kategori + quoted property + nøgleord"
     },
     {
-        "input": "Hvor er det nærmeste galleri?",
-        "expected_output": "{ \"version\": 1, \"include\": { \"or\": {}, \"and\": { \"lt\": [3] } }, \"exclude\": { \"or\": {}, \"and\": {} } }",
-        "description": "Simpel kategori, ignorer 'nærmeste'"
+        "input": "Seværdighed med gratis adgang.",
+        "expected_output": "Seværdighed AND \"Gratis adgang\"",
+        "description": "Kategori + quoted phrase property"
     },
     {
-        "input": "En god restaurant med udsigt.",
-        "expected_output": "{ \"version\": 1, \"include\": { \"or\": {}, \"and\": { \"lt\": [1], \"st\": [201, 211] } }, \"exclude\": { \"or\": {}, \"and\": {} } }",
-        "description": "Kategori + flere st egenskaber i 'and' array"
+        "input": "En park med legeplads.",
+        "expected_output": "Park AND \"legeplads\"",
+        "description": "Kategori + quoted phrase property"
     },
     {
-        "input": "Pizzeria der ikke er fastfood.",
-        "expected_output": "{ \"version\": 1, \"include\": { \"or\": {}, \"and\": { \"lt\": [1], \"st\": [101] } }, \"exclude\": { \"or\": {}, \"and\": { \"st\": [105] } } }",
-        "description": "Implicit kategori + st nøgleord + negation af st"
+        "input": "Hvor kan jeg finde et apotek?",
+        "expected_output": "Apotek",
+        "description": "Simpel kategori"
     },
     {
-        "input": "Er der nogle nye in steder (cafeer)?",
-        "expected_output": "{ \"version\": 1, \"include\": { \"or\": {}, \"and\": { \"lt\": [2], \"st\": [202] } }, \"exclude\": { \"or\": {}, \"and\": {} } }",
-        "description": "Kategori + special mapping (Trendy st)"
+        "input": "Find en hyggelig kaffebar der har åbent sent.",
+        "expected_output": "Cafe AND \"Hyggelig\" AND \"Åbent sent\"",
+        "description": "Kategori + flere quotede egenskaber/fraser"
+    },
+    {
+        "input": "Restaurant der serverer vegetarisk mad.",
+        "expected_output": "Restaurant AND Vegetarisk",
+        "description": "Kategori + nøgleord for køkken/type"
+    },
+    {
+        "input": "Er der en svømmehal der ikke er for overfyldt?",
+        "expected_output": "Svømmehal AND NOT \"Overfyldt\"",
+        "description": "Kategori + negation af quoted property"
+    },
+    {
+        "input": "En strand der er ren og børnevenlig.",
+        "expected_output": "Strand AND \"Ren\" AND \"Børnevenlig\"",
+        "description": "Kategori + flere quotede egenskaber"
+    },
+    {
+        "input": "Museer der er åbne om søndagen.",
+        "expected_output": "Museum AND \"Åben Søndag\"",
+        "description": "Kategori + quoted phrase for åbningstid"
+    },
+    {
+        "input": "Bibliotek med gratis wifi.",
+        "expected_output": "Bibliotek AND \"Gratis wifi\"",
+        "description": "Kategori + quoted phrase property"
+    },
+     {
+        "input": "Find mig et billigt sted at spise (ikke fastfood).",
+        "expected_output": "Restaurant AND \"Billig\" AND NOT \"Fastfood\"",
+        "description": "Implicit kategori + quoted property + negation af quoted phrase"
+    },
+    {
+        "input": "Vis alt i nærheden.",
+        "expected_output": "*",
+        "description": "Wildcard forespørgsel"
+    },
+    {
+        "input": "Hvad er din mening om vejret i dag?",
+        "expected_output": "UNKNOWN",
+        "description": "Irrelevant forespørgsel"
+    },
+    {
+        "input": "Find en kirke med en flot have.",
+        "expected_output": "Kirke AND \"Flot have\"",
+        "description": "Kategori + quoted phrase property"
+    },
+    {
+        "input": "Er der nogen havnesteder i nærheden?",
+        "expected_output": "Havn",
+        "description": "Kategori, ignorer afstand"
     }
-  ]
+]

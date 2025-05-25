@@ -1,0 +1,22 @@
+[
+    {
+        "input": "Find en cafe i nærheden.",
+        "description": "Simpel kategori, ignorer afstand"
+    },
+    {
+        "input": "Hvor er det nærmeste galleri?",
+        "description": "Simpel kategori, ignorer 'nærmeste'"
+    },
+    {
+        "input": "En god restaurant med udsigt.",
+        "description": "Kategori + flere st egenskaber i 'and' array"
+    },
+    {
+        "input": "Pizzeria der ikke er fastfood.",
+        "description": "Implicit kategori + st nøgleord + negation af st"
+    },
+    {
+        "input": "Er der nogle nye in steder (cafeer)?",
+        "description": "Kategori + special mapping (Trendy st)"
+    }
+  ]

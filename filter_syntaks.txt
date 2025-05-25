@@ -1,0 +1,50 @@
+ // Filter syntax:
+  // --------------
+  // <filter>             ::= '{' 'current:' <filterDefinition> ',' 'saved:' <savedUserFilters> '}'
+  // <filterDefinition>   ::= <empty> | '{' <version> ',' 'include:' <filterAndOr> ',' 'exclude:' <filterAndOr> '}'
+  // <empty>              ::= '{}'
+  // <version>            ::= 'version:' <number>
+  // <filterAndOr>        ::= '{' 'or:' <filterValues> ',' 'and:' <filterValues> '}'
+  // <filterValues>       ::= '{' <filterValue> { ',' <filterValue> } '}'
+  // <filterValue>        ::= <locationTypeFilter> | <subTypeFilter> | <priceFilter> | <parkingFilter> | <myLocationsFilter>
+  // <locationTypeFilter> ::= 'lt:' '[' <id> { ',' <id> } ']'
+  // <subTypeFilter>      ::= 'st:' '[' <id> { ',' <id> } ']'
+  // <priceFilter>        ::= 'pr:' '[' <formPrice> ',' <toPrice> ']'
+  // <parkingFilter>      ::= 'pk:' '[' <parking> { ',' <parking> } ']'
+  // <myLocationsFilter>  ::= 'ml:' '[' 0 ']'
+  // <id>                 ::= <number>
+  // <formPrice>          ::= <number>
+  // <toPrice>            ::= <number>
+  // <parking>            ::= 'parkingSpaces' | 'parkingSpacesWithCharging'
+  // savedUserFilters:    ::= '[' { 'name:' <filterName> ',' 'filter:' <filterDefinition> } ']'
+  //
+  // Examples:
+  // ---------
+  //    let userFilterData = { 
+  //      filter: {
+  //        current: filter, /* See filer object example below */
+  //        saved: [
+  //          { name: 'filter1', filter: filter /* See filer object example below */ },
+  //          // More lines as the above object 'filter1'
+  //        ],
+  //      },
+  //      search: {
+  //        current: filter, /* See filer object example below */
+  //        saved: [
+  //          { name: 'filter1', filter: filter /* See filer object example below */ },
+  //          // More lines as the above object 'filter1'
+  //        ],
+  //      }
+  //    };
+  //    let filter = {
+  //      version: 1,
+  //      include: {
+  //        or: { lt: [1, 693] }, 
+  //        and: { pr: [2, 4] }
+  //      },
+  //      exclude: {
+  //        // As for include
+  //        or: {},
+  //        and: {},
+  //      }
+  //    };

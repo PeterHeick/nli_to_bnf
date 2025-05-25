@@ -5,165 +5,198 @@ import json
 import traceback
 import sys
 
-# --- Konfiguration ---
+# --- Configuration ---
 load_dotenv()
 API_KEY = os.getenv('GEMINI_API_KEY')
-MODEL_NAME = 'gemini-1.5-flash-latest' # Sørg for dette navn er korrekt
-TEST_CASES_FILE = 'test2.json' # Fil med testcases i JSON format
+MODEL_NAME = 'gemini-1.5-flash-latest'
+TEST_CASES_FILE = 'test.json'
 
-# --- API Opsætning ---
-model = None # Initialiser model til None
+# --- API Setup ---
+model = None
 try:
     if not API_KEY:
-        raise ValueError("GOOGLE_API_KEY not found in .env file.")
+        raise ValueError("GEMINI_API_KEY not found in .env file.")
     genai.configure(api_key=API_KEY)
     model = genai.GenerativeModel(MODEL_NAME)
-    # Valider modellen (kan udkommenteres for hurtigere start, men anbefales)
-    # try:
-    #     # Prøv et dummy kald for at validere nøgle og model
-    #     model.generate_content("ping", request_options={'timeout': 10})
-    #     print(f"Successfully configured and validated Gemini model: {MODEL_NAME}")
-    # except Exception as e:
-    #      raise ConnectionError(f"Failed to validate model {MODEL_NAME}. Check API key, model name, or connectivity. Error: {e}")
-
     print(f"Successfully configured Gemini model: {MODEL_NAME}")
 
 except (ValueError, ConnectionError) as e:
     print(f"Error during API setup: {e}")
-    # model forbliver None, scriptet vil tjekke for dette senere
-    # sys.exit(1) # Afslut ikke nødvendigvis her, hvis man vil se load fejl
+    model = None
 except Exception as e:
     print(f"An unexpected error occurred during API setup: {e}")
     traceback.print_exc()
     model = None
-    # sys.exit(1)
 
 
-# --- Prompt Funktion (IDENTISK med den i din app!) ---
 def get_instruction_prompt(user_query):
     """
-    Opretter prompten til LLM'en, der instruerer den i at oversætte
-    brugerens forespørgsel til et JSON-filter objekt.
+    Creates the prompt for the LLM to translate user queries to JSON filter objects
+    following the BNF specification.
     """
-    # ESCAPE curly braces {{ og }}
-    base_prompt_template = """
-Du er en assistent til en mobil app kaldet "NearMe". Din opgave er at oversætte brugerens naturlige sprog forespørgsel om steder i nærheden til et struktureret JSON-objekt, der passer til appens interne filter-format defineret af en BNF notation.
+    
+    prompt = f"""You are an assistant for a mobile app called "NearMe". Your task is to translate the user's natural language query about nearby places into a structured JSON object that matches the app's internal filter format defined by a BNF notation.
 
-JSON-objektet skal have følgende struktur (der repræsenterer <filterDefinition> fra BNF'en med version 1):
+The JSON object must have the following structure (representing the complete BNF structure):
 {{
-  "version": 1,
-  "include": {{
-    "or": {{ /* <filterValues> object */ }},
-    "and": {{ /* <filterValues> object */ }}
+  "current": {{
+    "version": 1,
+    "include": {{
+      "or": {{}},
+      "and": {{}}
+    }},
+    "exclude": {{
+      "or": {{}},
+      "and": {{}}
+    }}
   }},
-  "exclude": {{
-    "or": {{ /* <filterValues> object */ }},
-    "and": {{ /* <filterValues> object */ }}
-  }}
+  "saved": []
 }}
-Hvor <filterValues> er et objekt med nøgler som "lt", "st", "pr", "pk", "ml" og tilhørende arrays af ID'er eller strenge.
 
-**Mapping af naturligt sprog til filtertyper og ID'er:**
+Where the "and" and "or" objects can contain filter values with keys like "lt", "st", "pr", "pk", "ml" and corresponding arrays of IDs or strings.
 
-*   **Stedstyper ("lt"):** Brug til hovedkategorier af steder. Eksempler:
-    *   Restaurant: 1
-    *   Cafe: 2
-    *   Galleri: 3
-    *   Park: 4
-    *   Seværdighed: 5
-    *   Svømmehal: 6
-    *   Museum: 7
-    *   Havn: 8
-    *   Strand: 9
-    *   Butik: 10
-    *   Apotek: 11
-    *   Bibliotek: 12
-    *   Kirke: 13
-    *   Hospital: 14
-    *   Skole: 15
-*   **Egenskaber/Subtyper ("st"):** Brug til køkkentyper og beskrivende egenskaber. Eksempler:
-    *   Pizza: 101
-    *   Sushi: 102
-    *   Italiensk: 103
-    *   Vegetarisk: 104
-    *   Fastfood: 105
-    *   Frokoststed: 106
-    *   Tøj (Butik subtype): 107
-    *   God: 201
-    *   Trendy ("nye in steder", "hippe"): 202
-    *   Åbent sent: 203
-    *   Gratis adgang: 204
-    *   Gratis parkering: 205
-    *   Med legeplads: 206
-    *   Billig: 207
-    *   Dyrt: 208
-    *   Ren: 209
-    *   Børnevenlig: 210
-    *   Med udsigt: 211
-    *   Overfyldt: 212
-    *   Åben Søndag: 213
-    *   Gratis wifi: 214
-    *   Flot have: 215
-*   **Prisinterval ("pr"):** Bruges sjældent i disse eksempler. Kræver to numeriske værdier [fra, til]. Ignorer for "billig" eller "dyr" - brug "st" ID'er for disse.
-*   **Parkering ("pk"):** Bruges med specifikke strenge i et array. Eksempler:
-    *   Med parkering: "parkingSpaces"
-    *   Med ladestander: "parkingSpacesWithCharging"
-*   **Mine Steder ("ml"):** Bruges for gemte steder. Eksempel:
-    *   Mine gemte steder: [0]
+**Mapping of natural language to filter types and IDs:**
 
-**Regler for oversættelse:**
+**Location Types ("lt"):** Use EXACTLY these IDs for location types:
+- takeaway: 1
+- packetPickup: 6
+- office: 640
+- shop: 688
+- mall: 689
+- market: 690
+- supermarket: 691
+- restaurant: 693
+- fastFood: 694
+- cafe: 695
+- bar: 696
+- pub: 697
+- club: 698
+- hotel: 699
+- motel: 700
+- hostel: 701
+- transportation: 702
+- airport: 704
+- port: 705
+- chargeStation: 708
+- gasStation: 709
+- parking: 710
+- park: 711
+- zoo: 712
+- botanicalGarden: 713
+- cinema: 714
+- museum: 715
+- theatre: 716
+- concertHall: 717
+- hospital: 718
+- pharmacy: 719
+- doctor: 720
+- dentist: 721
+- other: 722
+- beautySalon: 724
+- sport: 726
+- swimmingPool: 727
+- casino: 732
+- canoeRental: 740
+- bridge: 743
+- conference: 745
+- recycling: 747
+- grocery: 761
+- bowling: 762
+- fitness: 763
+- tennis: 764
+- golf: 765
+- diskGolf: 766
+- ice: 767
+- carRental: 768
+- taxi: 769
+- bus: 770
+- baker: 773
+- clothing: 775
+- craftsman: 776
+- painter: 777
+- lumber: 778
+- hairdresser: 779
 
-1.  Analyser brugerens forespørgsel for at identificere Stedstyper (`lt`), Egenskaber/Subtyper (`st`), Parkering (`pk`), Mine Steder (`ml`).
-2.  Ignorer ord relateret til afstand ("nærmeste", "i nærheden", "hvor langt") - disse håndteres af appen, ikke filteret.
-3.  Ignorer spørgeord ("hvor", "er der", "findes der") - fokuser på steder og egenskaber.
-4.  **Inklusion vs. Eksklusion:**
-    *   Kriterier der skal inkluderes placeres i "include" sektionen.
-    *   Kriterier der skal ekskluderes (markeret med "ikke" / `NOT`) placeres i "exclude" sektionen.
-5.  **AND vs. OR:**
-    *   Kriterier forbundet med "og" (`AND`) placeres i "and" objekterne inden for "include" eller "exclude". Hvis der er flere værdier af samme type (f.eks. flere `st` ID'er) i "and" sektionen, placeres de i *samme* array for den filtertype: `"st": [id1, id2]`.
-    *   Kriterier forbundet med "eller" (`OR`) placeres i "or" objekterne inden for "include" eller "exclude". Flere værdier af samme type i "or" sektionen placeres i *samme* array: `"lt": [id1, id2]`.
-    *   **VIGTIGT:** Hvis brugeren *explicit* bruger "eller" mellem *forskellige* steder eller egenskaber, brug da "or" sektionen for de pågældende filtertyper. Ellers (for implicit "og" eller enkeltkriterier), brug "and" sektionen.
-6.  **Tomme sektioner:** Hvis der ikke er noget at inkludere/ekskludere af en bestemt type (or/and) eller en filtertype (lt, st, etc.) er relevant, skal objektet/filtertypen udelades helt fra filterValues objektet. Et tomt <filterValues> objekt er `{{}}`.
-7.  **"Vis alt" / Wildcard:** Hvis brugeren spørger efter "alt" eller "bare vis mig", returner en tom filterdefinition: {{ "version": 1, "include": {{ "or": {{}}, "and": {{}} }}, "exclude": {{ "or": {{}}, "and": {{}} }} }}.
-8.  **Uklar/Irrelevant Forespørgsel:** Hvis forespørgslen er irrelevant for at finde steder, returner præcis teksten **"UNKNOWN"**.
+**Properties/Subtypes ("st"):** Use for cuisine types and descriptive properties:
+- Pizza: 101
+- Sushi: 102
+- Italian: 103
+- Vegetarian: 104
+- Lunch place: 106
+- Good: 201
+- Trendy: 202
+- Open late: 203
+- Free entrance: 204
+- Free parking: 205
+- With playground: 206
+- Cheap: 207
+- Expensive: 208
+- Clean: 209
+- Child-friendly: 210
+- With view: 211
+- Crowded: 212
+- Open Sunday: 213
+- Free wifi: 214
+- Beautiful garden: 215
 
-**VIGTIGT:** Dit output skal KUN være det genererede JSON-objekt (som en streng) eller teksten "UNKNOWN". Ingen anden tekst, forklaring eller formatering. JSON-objektet skal være gyldigt.
+**Price Range ("pr"):** Requires two numeric values [from, to]. Example: [100, 500]
 
----
-**Eksempler (Few-shot learning):**
+**Parking ("pk"):** Use specific strings:
+- With parking: "parkingSpaces"
+- With charging stations: "parkingSpacesWithCharging"
 
-*   Bruger: hvor finder jeg en pizza det skal ikke være fastfood.
-    Output: {{ "version": 1, "include": {{ "or": {{}}, "and": {{ "lt": [1], "st": [101] }} }}, "exclude": {{ "or": {{}}, "and": {{ "st": [105] }} }} }}
+**My Locations ("ml"):** For saved places, always use: [0]
 
-*   Bruger: Er der nogle nye in steder (cafeer) i nærheden
-    Output: {{ "version": 1, "include": {{ "or": {{}}, "and": {{ "lt": [2], "st": [202] }} }}, "exclude": {{ "or": {{}}, "and": {{}} }} }}
+**Translation Rules:**
 
-*   Bruger: Hvor langt er der til det nærmeste galleri
-    Output: {{ "version": 1, "include": {{ "or": {{}}, "and": {{ "lt": [3] }} }}, "exclude": {{ "or": {{}}, "and": {{}} }} }}
+1. Analyze the user's query to identify Location Types (lt), Properties/Subtypes (st), Parking (pk), My Locations (ml), Price Range (pr).
+2. Ignore distance-related words ("nearest", "nearby", "how far") - these are handled by the app.
+3. Ignore question words ("where", "is there", "are there") - focus on places and properties.
+4. **Inclusion vs. Exclusion:**
+   - Criteria to be included go in the "include" section
+   - Criteria to be excluded (marked with "not" or negation) go in the "exclude" section
+5. **AND vs. OR:**
+   - Criteria connected with "and" go in the "and" objects
+   - Criteria connected with "or" go in the "or" objects
+   - If the user explicitly uses "or" between different places or properties, use the "or" section
+   - Otherwise (for implicit "and" or single criteria), use the "and" section
+6. **Empty sections:** If there is nothing to include/exclude, omit the filter type entirely. Empty objects are {{}}.
+7. **Show all:** If the user asks for "everything" or "just show me", return empty filters.
+8. **Unclear/Irrelevant Query:** If the query is irrelevant for finding places, return exactly "UNKNOWN".
 
-*   Bruger: Restaurant eller cafe?
-    Output: {{ "version": 1, "include": {{ "or": {{ "lt": [1, 2] }}, "and": {{}} }}, "exclude": {{ "or": {{}}, "and": {{}} }} }}
+**IMPORTANT:** Your output should ONLY be the generated JSON object (as a string) or the text "UNKNOWN". No other text, explanation or formatting. The JSON object must be valid and follow the BNF specification with "current" and "saved" wrapper.
 
-*   Bruger: Sted med gratis parkering eller gratis adgang?
-    Output: {{ "version": 1, "include": {{ "or": {{ "st": [205, 204] }}, "and": {{}} }}, "exclude": {{ "or": {{}}, "and": {{}} }} }}
+**Examples:**
 
-*   Bruger: Bare vis meg alt i nærheten
-    Output: {{ "version": 1, "include": {{ "or": {{}}, "and": {{}} }}, "exclude": {{ "or": {{}}, "and": {{}} }} }}
+User: where can I find a pizza restaurant that should not be fast food
+Output: {{"current": {{"version": 1, "include": {{"or": {{}}, "and": {{"lt": [693], "st": [101]}}}}, "exclude": {{"or": {{}}, "and": {{"lt": [694]}}}}}}, "saved": []}}
 
-*   Bruger: Hva er klokken?
-    Output: UNKNOWN
+User: Are there any trendy cafes nearby
+Output: {{"current": {{"version": 1, "include": {{"or": {{}}, "and": {{"lt": [695], "st": [202]}}}}, "exclude": {{"or": {{}}, "and": {{}}}}}}, "saved": []}}
 
----
-**Oversæt den følgende forespørgsel til et JSON filter objekt for NearMe appen:**
+User: How far is it to the nearest museum
+Output: {{"current": {{"version": 1, "include": {{"or": {{}}, "and": {{"lt": [715]}}}}, "exclude": {{"or": {{}}, "and": {{}}}}}}, "saved": []}}
 
-Bruger: [Sæt brugerens forespørgsel her]
-Output:
-"""
-    # Format the template string with the actual user_query
-    return base_prompt_template.replace("[Sæt brugerens forespørgsel her]", user_query)
+User: Restaurant or cafe?
+Output: {{"current": {{"version": 1, "include": {{"or": {{"lt": [693, 695]}}, "and": {{}}}}, "exclude": {{"or": {{}}, "and": {{}}}}}}, "saved": []}}
+
+User: Place with free parking or free entrance?
+Output: {{"current": {{"version": 1, "include": {{"or": {{"st": [205, 204]}}, "and": {{}}}}, "exclude": {{"or": {{}}, "and": {{}}}}}}, "saved": []}}
+
+User: Just show me everything nearby
+Output: {{"current": {{"version": 1, "include": {{"or": {{}}, "and": {{}}}}, "exclude": {{"or": {{}}, "and": {{}}}}}}, "saved": []}}
+
+User: What time is it?
+Output: UNKNOWN
+
+**Translate the following query to a JSON filter object for the NearMe app:**
+
+User: {user_query}
+Output:"""
+    
+    return prompt
 
 
-# --- Main Test Logic (Simplified) ---
 def run_manual_test():
     if model is None:
         print("\nCannot run tests because the API model could not be configured.")
@@ -171,7 +204,6 @@ def run_manual_test():
         return
 
     try:
-        # Load test cases from JSON file
         with open(TEST_CASES_FILE, 'r', encoding='utf-8') as f:
             test_cases = json.load(f)
     except FileNotFoundError:
@@ -187,80 +219,65 @@ def run_manual_test():
 
     total_tests = len(test_cases)
 
-    print(f"\nRunning manual NLI tests using model: {MODEL_NAME}\n")
+    print(f"\nRunning manual NLI tests using model: {MODEL_NAME}")
+    print(f"Following BNF specification with 'current' and 'saved' structure\n")
     print(f"Loading {total_tests} test cases from '{TEST_CASES_FILE}'.\n")
     print("--- Output Format ---")
     print("Input:      'User Query'")
-    print("Expected:   Expected JSON (for reference)")
     print("Actual LLM: Raw output received from LLM API")
     print("---------------------\n")
 
-
     for i, test_case in enumerate(test_cases):
         input_query = test_case.get("input")
-        expected_output_raw = test_case.get("expected_output") # Raw string from JSON file
         description = test_case.get("description", "No description")
 
-        if input_query is None or expected_output_raw is None:
+        if input_query is None:
             print(f"--- Skipping test case {i+1}/{total_tests} ---")
-            print("Reason: Missing 'input' or 'expected_output' in test case definition.")
+            print("Reason: Missing 'input' in test case definition.")
             print("-" * 30)
             continue
 
         print(f"--- Test {i+1}/{total_tests} ---")
         print(f"Input:      '{input_query}'")
-        print(f"Description:{description}")
-        # Print expected output string for reference
-        print(f"Expected:   {expected_output_raw}")
+        print(f"Description: {description}")
 
         try:
             full_prompt = get_instruction_prompt(input_query)
 
-            # Call LLM API
             response = model.generate_content(
                 full_prompt,
                 generation_config=genai.GenerationConfig(temperature=0.0),
-                request_options={'timeout': 120} # 2 minute timeout
+                request_options={'timeout': 120}
             )
 
-            # Get the raw text output from the response
-            generated_text = "NO CANDIDATES" # Default if no candidates
+            generated_text = "NO CANDIDATES"
             if response.candidates:
-                 # Try to get text from the first candidate's parts
-                 if hasattr(response.candidates[0], 'content') and hasattr(response.candidates[0].content, 'parts'):
-                     generated_text = "".join(part.text for part in response.candidates[0].content.parts if hasattr(part, 'text'))
-                 else:
-                      # Fallback to .text if structure is unexpected
-                      try:
-                          generated_text = response.text
-                      except Exception:
-                           generated_text = "Could not get text from Gemini response (unexpected structure)."
-
+                if hasattr(response.candidates[0], 'content') and hasattr(response.candidates[0].content, 'parts'):
+                    generated_text = "".join(part.text for part in response.candidates[0].content.parts if hasattr(part, 'text'))
+                else:
+                    try:
+                        generated_text = response.text
+                    except Exception:
+                        generated_text = "Could not get text from Gemini response (unexpected structure)."
             elif response.prompt_feedback and response.prompt_feedback.block_reason:
-                 generated_text = f"PROMPT BLOCKED: {response.prompt_feedback.block_reason}"
-            # else: generated_text remains "NO CANDIDATES"
+                generated_text = f"PROMPT BLOCKED: {response.prompt_feedback.block_reason}"
 
+            print(f"Actual LLM: {generated_text}")
 
-            print(f"Actual LLM: {generated_text}") # Print the raw text output
-
-        except google.api_core.exceptions.DeadlineExceeded:
-            print("Actual LLM: API Timeout")
-            print("Error: API call timed out after 120 seconds.")
         except Exception as e:
             print(f"Actual LLM: EXCEPTION: {type(e).__name__}")
             print(f"Error: {e}")
             traceback.print_exc()
 
-        print("-" * 30) # separator
+        print("-" * 30)
 
     print("\n--- Manual Test Run Complete ---")
 
 
 if __name__ == "__main__":
-    # Check if the test cases file exists before starting
     if not os.path.exists(TEST_CASES_FILE):
-         print(f"\nError: Test cases file '{TEST_CASES_FILE}' not found.")
-         print("Please create this file with your JSON test cases.")
-         sys.exit(1)
+        print(f"\nError: Test cases file '{TEST_CASES_FILE}' not found.")
+        print("Please create this file with your JSON test cases.")
+        sys.exit(1)
 
     run_manual_test()
