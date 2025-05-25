@@ -16,7 +16,7 @@ This tool tests a mobile app's ability to translate Danish natural language loca
 - No automatic validation - pure inspection mode
 - Perfect for understanding how the LLM interprets different queries
 
-### 3. `test2.json` - Test Cases
+### 3. `test.json` - Test Cases
 Contains test cases in the following format:
 ```json
 [
